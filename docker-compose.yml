@@ -1,4 +1,5 @@
 version: "3.9"
+
 services:
   # Sets up the genesis configuration for the go-ethereum client from a JSON file.
   geth-genesis:
@@ -14,7 +15,7 @@ services:
     image: "eth-pos-devnet_geth:latest"
     command:
       - --http
-      - --http.api=engine,eth,web3,net,debug,flashbots
+      - --http.api=engine,eth,web3,net,debug,flashbots,builder,txpool
       - --http.addr=0.0.0.0
       - --authrpc.vhosts=*
       - --authrpc.addr=0.0.0.0
@@ -25,10 +26,13 @@ services:
       - --password=/execution/geth_password.txt
       - --nodiscover
       - --syncmode=full
-      - --verbosity=3
       - --mine
+      - --metrics
+      - --metrics.addr=0.0.0.0
       - --builder
       - --builder.local_relay=true
+      - --builder.slots_in_epoch=6
+      - --builder.seconds_in_slot=4
       - --builder.secret_key=0x2e0834786285daccd064ca17f1654f67b4aef298acbb82cef9ec422fb4975622
       - --builder.relay_secret_key=0x2e0834786285daccd064ca17f1654f67b4aef298acbb82cef9ec422fb4975622
       - --builder.genesis_validators_root=0x83431ec7fcf92cfc44947fc0418e831c25e1d0806590231c439830db7ad54fda
@@ -40,6 +44,7 @@ services:
       - 28545:28545
       - 8551:8551
       - 8545:8545
+      - 6060:6060
     depends_on:
       geth-genesis:
         condition: service_completed_successfully
