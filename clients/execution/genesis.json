@@ -20,10 +20,10 @@
 		"arrowGlacierBlock": 0,
 		"grayGlacierBlock": 0,
 		"clique": {
-			"period": 5,
+			"period": 4,
 			"epoch": 30000
 		},
-		"terminalTotalDifficulty": 50
+		"terminalTotalDifficulty": 30
 	},
 	"difficulty": "1",
 	"gasLimit": "30000000",
@@ -98,6 +98,9 @@
 		},
 		"0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199": {
 			"balance": "10000000000000000000000"
+		},
+		"0xc64498FA4661Ac5Ecd8c9915E232f57eb020cA00": {
+			"balance": "200000000000000000000000"
 		}
 	}
 }

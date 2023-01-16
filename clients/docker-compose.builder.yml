@@ -1,0 +1,50 @@
+version: "3.9"
+
+name: eth-pos-devnet
+services:
+  # Sets up the genesis configuration for the go-ethereum client from a JSON file.
+  geth-genesis:
+    image: "flashbots/builder:latest"
+    command: --datadir=/execution init /execution/genesis.json
+    volumes:
+      - ./execution:/execution
+      - ./execution/genesis.json:/execution/genesis.json
+
+  # Runs the go-ethereum execution client with the specified, unlocked account and necessary
+  # APIs to allow for proof-of-stake consensus via Prysm.
+  geth:
+    image: "flashbots/builder:latest"
+    command:
+      - --http
+      - --http.api=engine,eth,web3,net,debug,flashbots,builder,txpool
+      - --http.addr=0.0.0.0
+      - --ws.api=eth,web3,net,debug,txpool
+      - --ws
+      - --ws.port=8546
+      - --datadir=/execution  
+      - --allow-insecure-unlock
+      - --unlock=0x123463a4b065722e99115d6c222f267d9cabb524
+      - --password=/execution/geth_password.txt
+      - --nodiscover
+      - --mine
+      - --metrics
+      - --metrics.builder
+      - --metrics.expensive
+      - --metrics.addr=0.0.0.0
+      - --miner.maxmergedbundles 3
+      - --miner.algotype=greedy
+      - --miner.recommit 1s
+      - --vmodule="miner=4"
+    ports:
+      - 28545:28545
+      - 8551:8551
+      - 8545:8545
+      - 6060:6060
+    depends_on:
+      geth-genesis:
+        condition: service_completed_successfully
+    volumes:
+      - ./execution:/execution
+      - ./execution/geth_password.txt:/execution/geth_password.txt
+    environment:
+      - BUILDER_TX_SIGNING_KEY=0x2e0834786285daccd064ca17f1654f67b4aef298acbb82cef9ec422fb4975622

@@ -1,8 +1,10 @@
 version: "3.9"
+
+name: eth-pos-devnet
 services:
   # Sets up the genesis configuration for the go-ethereum client from a JSON file.
   geth-genesis:
-    image: "ethereum/client-go:latest"
+    image: "flashbots/builder:latest"
     command: --datadir=/execution init /execution/genesis.json
     volumes:
       - ./execution:/execution
@@ -11,24 +13,46 @@ services:
   # Runs the go-ethereum execution client with the specified, unlocked account and necessary
   # APIs to allow for proof-of-stake consensus via Prysm.
   geth:
-    image: "ethereum/client-go:latest"
+    image: "flashbots/builder:latest"
     command:
       - --http
-      - --http.api=eth
+      - --http.api=engine,eth,web3,net,debug,flashbots,builder,txpool
       - --http.addr=0.0.0.0
       - --authrpc.vhosts=*
       - --authrpc.addr=0.0.0.0
       - --authrpc.jwtsecret=/execution/jwtsecret
-      - --datadir=/execution
+      - --ws.api=eth,web3,net,debug,txpool
+      - --ws
+      - --ws.port=8546
+      - --datadir=/execution  
       - --allow-insecure-unlock
       - --unlock=0x123463a4b065722e99115d6c222f267d9cabb524
       - --password=/execution/geth_password.txt
       - --nodiscover
       - --syncmode=full
       - --mine
+      - --metrics
+      - --metrics.builder
+      - --metrics.expensive
+      - --metrics.addr=0.0.0.0
+      - --builder
+      - --builder.local_relay=true
+      - --builder.slots_in_epoch=6
+      - --builder.seconds_in_slot=4
+      - --builder.secret_key=0x2e0834786285daccd064ca17f1654f67b4aef298acbb82cef9ec422fb4975622
+      - --builder.relay_secret_key=0x2e0834786285daccd064ca17f1654f67b4aef298acbb82cef9ec422fb4975622
+      - --builder.genesis_validators_root=0x83431ec7fcf92cfc44947fc0418e831c25e1d0806590231c439830db7ad54fda
+      - --builder.genesis_fork_version=0x20000089
+      - --builder.bellatrix_fork_version=0x20000091
+      - --builder.beacon_endpoint=http://beacon-chain:3500
+      - --miner.maxmergedbundles=3
+      - --miner.algotype=greedy
+      - --vmodule="miner=4"
     ports:
+      - 28545:28545
       - 8551:8551
       - 8545:8545
+      - 6060:6060
     depends_on:
       geth-genesis:
         condition: service_completed_successfully
@@ -36,11 +60,13 @@ services:
       - ./execution:/execution
       - ./execution/geth_password.txt:/execution/geth_password.txt
       - ./jwtsecret:/execution/jwtsecret
+    environment:
+      - BUILDER_TX_SIGNING_KEY=0x2e0834786285daccd064ca17f1654f67b4aef298acbb82cef9ec422fb4975622
 
   # Creates a genesis state for the beacon chain using a YAML configuration file and
   # a deterministic set of 64 validators.
   create-beacon-chain-genesis:
-    image: "gcr.io/prysmaticlabs/prysm/cmd/prysmctl:latest"
+    image: "gcr.io/prysmaticlabs/prysm/cmd/prysmctl:HEAD-4e2819" # latest is broken, using v3.2.0
     command:
       - testnet
       - generate-genesis
@@ -55,7 +81,7 @@ services:
   # The account used in go-ethereum is set as the suggested fee recipient for transactions
   # proposed via the validators attached to the beacon node.
   beacon-chain:
-    image: "gcr.io/prysmaticlabs/prysm/beacon-chain:latest"
+    image: "flashbots/prysm/beacon-chain:latest"
     command:
       - --datadir=/consensus/beacondata
       # No peers to sync with in this testnet, so setting to 0
@@ -74,6 +100,7 @@ services:
       - --accept-terms-of-use
       - --jwt-secret=/execution/jwtsecret
       - --suggested-fee-recipient=0x123463a4b065722e99115d6c222f267d9cabb524
+      - --http-mev-relay=http://geth:28545
     depends_on:
       geth:
         condition: service_started
@@ -90,7 +117,7 @@ services:
   # We run a validator client with 64, deterministically-generated keys that match
   # The validator keys present in the beacon chain genesis state generated a few steps above.
   validator:
-    image: "gcr.io/prysmaticlabs/prysm/validator:latest"
+    image: "gcr.io/prysmaticlabs/prysm/validator:HEAD-4e2819" # latest is broken, using v3.2.0
     command:
       - --beacon-rpc-provider=beacon-chain:4000
       - --datadir=/consensus/validatordata
@@ -98,6 +125,8 @@ services:
       - --interop-num-validators=64
       - --interop-start-index=0
       - --chain-config-file=/consensus/config.yml
+      - --suggested-fee-recipient=0x123463a4b065722e99115d6c222f267d9cabb524
+      - --enable-builder
     depends_on:
       beacon-chain:
         condition: service_started

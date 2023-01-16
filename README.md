@@ -73,3 +73,34 @@ Once the mining difficulty of go-ethereum reaches 50, proof-of-stake will be act
 
 
 
+Credits to [flashbots-compose](https://github.com/antonydenyer/flashbots-compose/blob/main/prysm/Dockerfile) for the Prysm and Geth Dockerfiles.
+
+# Running Test Framework
+
+To run tests with only the builder:
+
+```
+go run .
+```
+
+To run test with the local devnet, set the `only-builder` flag to false
+
+```
+go run . --only-builder=false
+```
+
+Additionally, you can also specify a branch and / or github repo link and the tests will attempt to build a docker image from the repo / branch.
+
+```
+go run . --branch my-branch --repo http://github.com/myrepo/builder.git
+```
+
+You can also specify the algo for the builder. By default it will run the greedy algorithm.
+
+```
+go run . --algo myalgo
+```
+
+After the test run, each test case will output the builder metrics to assess the performance of the builder. This will be under `results/metrics/<algotype>/<testcase>-<id>.json`.
+
+The test framework is heavily inspired and parts are taken from [hive](https://github.com/ethereum/hive), an e2e testing framework for Ethereum.

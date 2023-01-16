@@ -1,6 +1,10 @@
-consensus/beacondata
-consensus/genesis.ssz
-consensus/validatordata
-execution/geth
-execution/geth.ipc
+clients/consensus/beacondata
+clients/consensus/genesis.ssz
+clients/consensus/validatordata
+clients/consensus/prysm
+clients/execution/geth
+clients/execution/geth.ipc
 .idea/
+.env
+node_modules/
+results/
