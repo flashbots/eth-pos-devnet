@@ -7,9 +7,6 @@ fi
 
 if [ ! -d "execution/builder" ]; then
     git clone https://github.com/flashbots/builder.git execution/builder
-    cd execution/builder
-    git checkout 1f2047d7894d01c1526673c7ab33873fcae78abd
-    cd ../..
     docker build -t eth-pos-devnet_geth:latest execution/builder
 fi
 
